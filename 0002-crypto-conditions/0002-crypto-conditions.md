@@ -484,64 +484,64 @@ TODO
     BEGIN
 
     /**
-    * CONTAINERS
-    */
+     * CONTAINERS
+     */
 
     Condition ::= SEQUENCE {
-    type ConditionType,
-    featureBitmask OCTET STRING,
-    fingerprint OCTET STRING,
-    maxFulfillmentLength INTEGER (0..MAX)
+      type ConditionType,
+      featureBitmask OCTET STRING,
+      fingerprint OCTET STRING,
+      maxFulfillmentLength INTEGER (0..MAX)
     }
 
     Fulfillment ::= SEQUENCE {
-    type ConditionType,
-    payload OCTET STRING
+      type ConditionType,
+      payload OCTET STRING
     }
 
     ConditionType ::= INTEGER {
-    preimageSha256(0),
-    rsaSha256(1),
-    prefixSha256(2),
-    thresholdSha256(3),
-    ed25519(4)
+      preimageSha256(0),
+      rsaSha256(1),
+      prefixSha256(2),
+      thresholdSha256(3),
+      ed25519(4)
     } (0..65535)
 
     /**
-    * FULFILLMENT PAYLOADS
-    */
+     * FULFILLMENT PAYLOADS
+     */
 
     -- For preimage conditions, the payload equals the preimage
 
     PrefixSha256FulfillmentPayload ::= SEQUENCE {
-    prefix OCTET STRING,
-    subfulfillment Fulfillment
+      prefix OCTET STRING,
+      subfulfillment Fulfillment
     }
 
     ThresholdSha256FulfillmentPayload ::= SEQUENCE {
-    threshold INTEGER (0..4294967295),
-    subfulfillments SEQUENCE OF ThresholdSubfulfillment
+      threshold INTEGER (0..4294967295),
+      subfulfillments SEQUENCE OF ThresholdSubfulfillment
     }
 
     ThresholdSubfulfillment ::= SEQUENCE {
-    weight INTEGER (0..4294967295) DEFAULT 1,
-    condition Condition OPTIONAL,
-    fulfillment Fulfillment OPTIONAL
+      weight INTEGER (0..4294967295) DEFAULT 1,
+      condition Condition OPTIONAL,
+      fulfillment Fulfillment OPTIONAL
     }
 
     RsaSha256FulfillmentPayload ::= SEQUENCE {
-    modulus OCTET STRING (SIZE(128..512)),
-    signature OCTET STRING (SIZE(128..512))
+      modulus OCTET STRING (SIZE(128..512)),
+      signature OCTET STRING (SIZE(128..512))
     }
 
     Ed25519FulfillmentPayload ::= SEQUENCE {
-    publicKey OCTET STRING (SIZE(32)),
-    signature OCTET STRING (SIZE(64))
+      publicKey OCTET STRING (SIZE(32)),
+      signature OCTET STRING (SIZE(64))
     }
 
     /**
-    * FINGERPRINTS
-    */
+     * FINGERPRINTS
+     */
 
     -- SHA-256 hash of the fingerprint contents
     Sha256Fingerprint ::= OCTET STRING (SIZE(32)) -- digest
@@ -550,79 +550,79 @@ TODO
     Ed25519Fingerprint ::= OCTET STRING (SIZE(32)) -- publicKey
 
     /**
-    * FINGERPRINT CONTENTS
-    *
-    * The content that will be hashed to arrive at the fingerprint.
-    */
+     * FINGERPRINT CONTENTS
+     *
+     * The content that will be hashed to arrive at the fingerprint.
+     */
 
     -- The preimage type hashes the raw contents of the preimage
 
     PrefixSha256FingerprintContents ::= SEQUENCE {
-    prefix OCTET STRING,
-    condition Condition
+      prefix OCTET STRING,
+      condition Condition
     }
 
     ThresholdSha256FingerprintContents ::= SEQUENCE {
-    threshold INTEGER (0..4294967295),
-    subconditions SEQUENCE OF ThresholdSubcondition
+      threshold INTEGER (0..4294967295),
+      subconditions SEQUENCE OF ThresholdSubcondition
     }
 
     ThresholdSubcondition ::= SEQUENCE {
-    weight INTEGER (0..4294967295),
-    condition Condition
+      weight INTEGER (0..4294967295),
+      condition Condition
     }
 
     RsaSha256FingerprintContents ::= INTEGER (0..MAX) -- modulus
 
     /**
-    * EXAMPLES
-    */
+     * EXAMPLES
+     */
 
     exampleCondition Condition ::=
     {
-    type preimageSha256,
-    featureBitmask '03'H,
-    fingerprint '
-    E3B0C442 98FC1C14 9AFBF4C8 996FB924 27AE41E4 649B934C A495991B 7852B855
-    'H,
-    maxFulfillmentLength 2
+      type preimageSha256,
+      featureBitmask '03'H,
+      fingerprint '
+        E3B0C442 98FC1C14 9AFBF4C8 996FB924 27AE41E4 649B934C A495991B 7852B855
+        'H,
+      maxFulfillmentLength 2
     }
 
     exampleFulfillment Fulfillment ::=
     {
-    type preimageSha256,
-    payload '00'H
+      type preimageSha256,
+      payload '00'H
     }
 
     exampleRsaSha256FulfillmentPayload RsaSha256FulfillmentPayload ::=
     {
-    modulus '
-    B30E7A93 8783BABF 836850FF 49E14F87 E3F92D5C 46E33FEC A3E4F0B2 2358580B
-    11765995 F4B8EEA7 FB4712C2 E1E316F7 F775A953 D232216A 169D9A64 DDC00712
-    0A400B37 F2AFC077 B62FE304 DE74DE6A 119EC407 6B529C4F 6096B0BA AD4F533D
-    F0173B9B 822FD85D 65FA4BEF A92D8F52 4F69CBCA 0136BD80 D095C169 AEC0E095
-    'H,
-    signature '
-    48E8945E FE007556 D5BF4D5F 249E4808 F7307E29 511D3262 DAEF61D8 8098F9AA
-    4A8BC062 3A8C9757 38F65D6B F459D543 F289D73C BC7AF4EA 3A33FBF3 EC444044
-    7911D722 94091E56 1833628E 49A772ED 608DE6C4 4595A91E 3E17D6CF 5EC3B252
-    8D63D2AD D6463989 B12EEC57 7DF64709 60DF6832 A9D84C36 0D1C217A D64C8625
-    BDB594FB 0ADA086C DECBBDE5 80D424BF 9746D2F0 C312826D BBB00AD6 8B52C4CB
-    7D47156B A35E3A98 1C973863 792CC80D 04A18021 0A524158 65B64B3A 61774B1D
-    3975D78A 98B0821E E55CA0F8 6305D425 29E10EB0 15CEFD40 2FB59B2A BB8DEEE5
-    2A6F2447 D2284603 D219CD4E 8CF9CFFD D5498889 C3780B59 DD6A57EF 7D732620
-    'H
+      modulus '
+        B30E7A93 8783BABF 836850FF 49E14F87 E3F92D5C 46E33FEC A3E4F0B2 2358580B
+        11765995 F4B8EEA7 FB4712C2 E1E316F7 F775A953 D232216A 169D9A64 DDC00712
+        0A400B37 F2AFC077 B62FE304 DE74DE6A 119EC407 6B529C4F 6096B0BA AD4F533D
+        F0173B9B 822FD85D 65FA4BEF A92D8F52 4F69CBCA 0136BD80 D095C169 AEC0E095
+        'H,
+      signature '
+        48E8945E FE007556 D5BF4D5F 249E4808 F7307E29 511D3262 DAEF61D8 8098F9AA
+        4A8BC062 3A8C9757 38F65D6B F459D543 F289D73C BC7AF4EA 3A33FBF3 EC444044
+        7911D722 94091E56 1833628E 49A772ED 608DE6C4 4595A91E 3E17D6CF 5EC3B252
+        8D63D2AD D6463989 B12EEC57 7DF64709 60DF6832 A9D84C36 0D1C217A D64C8625
+        BDB594FB 0ADA086C DECBBDE5 80D424BF 9746D2F0 C312826D BBB00AD6 8B52C4CB
+        7D47156B A35E3A98 1C973863 792CC80D 04A18021 0A524158 65B64B3A 61774B1D
+        3975D78A 98B0821E E55CA0F8 6305D425 29E10EB0 15CEFD40 2FB59B2A BB8DEEE5
+        2A6F2447 D2284603 D219CD4E 8CF9CFFD D5498889 C3780B59 DD6A57EF 7D732620
+        'H
     }
 
     exampleEd25519FulfillmentPayload Ed25519FulfillmentPayload ::=
     {
-    publicKey '
-    EC172B93 AD5E563B F4932C70 E1245034 C35467EF 2EFD4D64 EBF81968 3467E2BF
-    'H,
-    signature '
-    B62291FA D9432F8F 298B9C4A 4895DBE2 93F6FFDA 1A68DADF 0CCDEF5F 47A0C721
-    2A5FEA3C DA97A3F4 C03EA9F2 E8AC1CEC 86A51D45 2127ABDB A09D1B6F 331C070A
-    'H
+      publicKey '
+        EC172B93 AD5E563B F4932C70 E1245034 C35467EF 2EFD4D64 EBF81968 3467E2BF
+        'H,
+      signature '
+        B62291FA D9432F8F 298B9C4A 4895DBE2 93F6FFDA 1A68DADF 0CCDEF5F 47A0C721
+        2A5FEA3C DA97A3F4 C03EA9F2 E8AC1CEC 86A51D45 2127ABDB A09D1B6F 331C070A
+        'H
     }
 
     END
