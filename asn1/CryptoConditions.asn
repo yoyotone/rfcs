@@ -76,10 +76,14 @@ Ed25519FulfillmentPayload ::= SEQUENCE {
  */
 
 -- SHA-256 hash of the fingerprint contents
-Sha256Fingerprint ::= UInt256 -- digest
+Sha256Fingerprint ::= SEQUENCE {
+	digest UInt256
+}
 
 -- 32-byte Ed25519 public key
-Ed25519Fingerprint ::= UInt256 -- publicKey
+Ed25519Fingerprint ::= SEQUENCE {
+	publicKey UInt256
+}
 
 /**
  * FINGERPRINT CONTENTS
@@ -108,7 +112,9 @@ ThresholdSubcondition ::= SEQUENCE {
 	condition Condition
 }
 
-RsaSha256FingerprintContents ::= VarUInt -- modulus
+RsaSha256FingerprintContents ::= SEQUENCE {
+	modulus VarUInt
+}
 
 /**
  * EXAMPLES
