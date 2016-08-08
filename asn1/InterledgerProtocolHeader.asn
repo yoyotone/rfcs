@@ -1,19 +1,33 @@
-InterledgerHeader
+InterledgerProtocolHeader
 DEFINITIONS
 AUTOMATIC TAGS ::=
 BEGIN
 
 IMPORTS
+	Timestamp,
 	Address,
 	Amount
 	FROM InterledgerTypes
+	
+	Condition
+	FROM CryptoConditions
+	
+	GenericHeaderPreamble
+	FROM GenericExtensionHeaderFormat
 ;
 
 InterledgerProtocolHeader ::= SEQUENCE {
-	version INTEGER(0..255),
-	destinationAddress Address,
-	destinationAmount Amount,
-	nextHeader INTEGER(0..65535)
+	-- Destination ILP Address
+	address Address,
+	-- Amount which must be received at the destination
+	amount Amount,
+	-- Optional execution condition and expiry date
+	conditional SEQUENCE {
+		-- Condition of the transfer
+		condition Condition,
+		-- Expiry date of the transfer
+		expiresAt Timestamp
+	} OPTIONAL
 }
 
 END
