@@ -7,6 +7,39 @@ IMPORTS
 	FROM GenericTypes
 ;
 
+-- Characters used in ILP addresses
+hyphen IA5String ::= {2,13}
+period IA5String ::= {2,14}
+number0 IA5String ::= {3,0}
+number9 IA5String ::= {3,9}
+uppercaseA IA5String ::= {4,1}
+uppercaseZ IA5String ::= {5,10}
+underscore IA5String ::= {5,15}
+lowercaseA IA5String ::= {6,1}
+lowercaseZ IA5String ::= {7,10}
+tilde IA5String ::= {7,14}
+
+-- A standard interledger address
+Address ::= IA5String
+	(FROM
+		( hyphen
+		| period
+		| number0..number9
+		| uppercaseA..uppercaseZ
+		| underscore
+		| lowercaseA..lowercaseZ
+		| tilde )
+	)
+
+-- --------------------------------------------------------------------------
+
+-- Amounts are provided as base-10 floating point
+Amount ::= SEQUENCE {
+	exponent Int8,
+	mantissa VarUInt
+}
+
+-- --------------------------------------------------------------------------
 
 -- GeneralizedTime is a standard ASN.1 time format based on ISO 8601. It was
 -- tempting to use the Unix epoch, however unfortunately, standard POSIX
@@ -16,14 +49,5 @@ IMPORTS
 -- since we do not wish to create our own time standard, we end up using ISO
 -- 8601.
 Timestamp ::= GeneralizedTime
-
--- A standard interledger address is an arbitrary byte string
-Address ::= IA5String
-
--- A standard interledger amount is a base-10 floating point amount
-Amount ::= SEQUENCE {
-	exponent Int8,
-	mantissa VarUInt
-}
 
 END
