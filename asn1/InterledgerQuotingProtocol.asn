@@ -25,7 +25,7 @@ QuoteRequest ::= SEQUENCE {
 
 QuoteResponse ::= SEQUENCE {
 	preamble GenericHeaderPreamble,
-	connectorAccount IlpAccountName,
+	connectorAccount Address,
 	-- Address that this quote response relates to
 	address Address,
 	-- Source or destination amount, depending on whichever one was NOT
@@ -35,8 +35,6 @@ QuoteResponse ::= SEQUENCE {
 }
 
 AddressSet ::= SEQUENCE OF Address
-
-IlpAccountName ::= OCTET STRING
 
 -- Length of hold in microseconds
 IlpHoldDuration ::= UInt64
