@@ -1,0 +1,41 @@
+InterledgerProtocolPacket
+DEFINITIONS
+AUTOMATIC TAGS ::=
+BEGIN
+
+IMPORTS
+	UInt16,
+	VarBytes
+	FROM GenericTypes
+
+	InterledgerProtocolHeader
+	FROM InterledgerProtocolHeader
+
+	SourceRoutingHeader
+	FROM SourceRoutingHeader
+;
+
+HEADER ::= CLASS
+	{
+	&typeId UInt16,
+	&Type
+	}
+	WITH SYNTAX {&typeId &Type}
+
+HeaderSet HEADER ::=
+	{
+	{0 InterledgerProtocolHeader} |
+	{256 SourceRoutingHeader}
+	}
+
+InterledgerPacket ::= SEQUENCE {
+	headers SEQUENCE OF Header,
+	userData VarBytes
+}
+
+Header ::= SEQUENCE {
+	headerType HEADER.&typeId ({HeaderSet}),
+	header HEADER.&Type ({HeaderSet}{@headerType})
+}
+
+END

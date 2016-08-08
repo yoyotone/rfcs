@@ -1,0 +1,24 @@
+value1 InterledgerPacket ::= {
+  headers {
+    {
+      headerType 0,
+      header InterledgerProtocolHeader : {
+        address "ilpdemo.red.alice",
+        amount {
+          exponent 0,
+          mantissa 10
+        },
+        conditional {
+          condition {
+            type preimageSha256,
+            requiredSuites 3,
+            fingerprint 'E3F64D2CDB048C0E6E1839B52A591D7117AFC4BBD83601BA91C5725088EB1B9B'H,
+            maxFulfillmentLength 37
+          },
+          expiresAt "20160807221849.179Z"
+        }
+      }
+    }
+  },
+  userData '48656C6C6F20576F726C6421'H
+}

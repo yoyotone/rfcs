@@ -1,0 +1,19 @@
+SourceRoutingHeader
+DEFINITIONS
+AUTOMATIC TAGS ::=
+BEGIN
+
+IMPORTS
+	Address,
+	Amount
+	FROM InterledgerTypes
+;
+
+SourceRoutingHeader ::= SEQUENCE {
+	-- Next hop account
+	account Address,
+	-- Next hop amount
+	amount Amount
+}
+
+END
