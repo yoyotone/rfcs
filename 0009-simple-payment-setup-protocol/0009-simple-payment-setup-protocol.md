@@ -4,7 +4,7 @@
 
 This document describes the Simple Payment Setup Protocol (SPSP), a basic protocol for exchanging payment information between senders and recipients to set up an Interledger payment.
 
-## Introduction 
+## Introduction
 
 ### Motivation
 
@@ -75,7 +75,7 @@ We assume that the sender knows the receiver endpoint (see [Appendix A: (Optiona
 4. The sender's SPSP client uses its ILP module to quote how much of the recipient's currency or asset type will be delivered to the recipient's ILP address for the given source amount.
 5. The sender accepts the quote.
 6. The sender's SPSP client submits the payment information, including the destination amount, to the receiver endpoint.
-7. The receiver endpoint responds with an [Interledger Payment Requests](../0011-interledger-payment-request), which includes the execution condition.
+7. The receiver endpoint responds with an [Interledger Payment Request](../0011-interledger-payment-request), which includes the execution condition.
 8. The sender's SPSP client uses its ILP module to create a transfer **using the chosen source amount, NOT by quoting the payment request**, and attaches the ILP packet to the transfer.
 9. The receiver's ILP module registers the incoming transfer held pending the fulfillment of the Crypto Condition. It validates that the transfer matches the packet and regenerates the condition fulfillment using the method recommended in the [Interledger Payment Request](../0011-interledger-payment-request) spec. The ILP module submits the fulfillment to execute the transfer and claim the funds.
 10. The sender's SPSP client receives a notification from its ILP module that the transfer has been executed, including the condition fulfillment from the recipient, and notifies the sender that the payment is completed.
@@ -98,35 +98,45 @@ The receiver endpoint is a URI used by the sender to query information about the
 
 The receiver endpoint MUST respond to HTTP `GET` and `POST` requests in the following manner:
 
-### Query (`GET <receiver>`)
 
-The sender queries the receiver endpoint to get information about the type of payment that can be made to this receiver:
+### Query (`GET /.well-known/webfinger?resource=acct:[identifier]`)
 
-#### Request
+Given a receiver identifier (typically an identifier following the `acct:` scheme), the sender queries the receiver endpoint to get information about the type of payment that can be made to this receiver.
+
+Whenever possible, receiver metadata MAY be exchanged out-of-band and the query phase MAY be skipped. However, in many cases, it is useful to be able to look up the latest metadata given a short, human-friendly identifier. The query method describes how to resolve such an identifier to an SPSP receiver endpoint.
+
+The sender uses Webfinger ([RFC 7033](https://tools.ietf.org/html/rfc7033)) to look up an identifier (e.g. `bob@red.ilpdemo.org`):
+
 ``` http
-GET /api/receivers/bob HTTP/1.1
+GET /.well-known/webfinger?resource=acct%3Abob%40red.ilpdemo.org HTTP/1.1
 Host: red.ilpdemo.org
 Accept: application/json
 ```
-
-#### Response
 ``` http
 HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-  "type": "payee",
-  "account": "ilpdemo.red.bob",
-  "currency_code": "USD",
-  "currency_symbol": "$",
-  "name": "Bob Dylan",
-  "image_url": "https://red.ilpdemo.org/api/receivers/bob/profile_pic.jpg"
+  "subject": "acct:bob@red.ilpdemo.org",
+  "properties": {
+    "https://interledger.org/rel/spsp/type": "payee",
+    "https://interledger.org/rel/spsp/account": "ilpdemo.red.bob",
+    "https://interledger.org/rel/spsp/currency_code": "USD",
+    "https://interledger.org/rel/spsp/currency_symbol": "$",
+    "https://interledger.org/rel/spsp/name": "Bob Dylan",
+    "https://interledger.org/rel/spsp/image_url": "https://red.ilpdemo.org/api/receivers/bob/profile_pic.jpg"
+  },
+  "links": [
+    {
+      "rel": "https://interledger.org/rel/receiver",
+      "href": "https://red.ilpdemo.org/api/receivers/bob"
+    }
+  ]
 }
 ```
+[Try this request](https://red.ilpdemo.org/.well-known/webfinger?resource=acct%3Abob%40red.ilpdemo.org)
 
-[Try this request](https://red.ilpdemo.org/api/receivers/bob)
-
-Possible values for `type` are:
+Possible values for `https://interledger.org/rel/spsp/type` are:
 
 `payee`
 : This is a general receiving account for peer-to-peer payments.
@@ -138,15 +148,24 @@ Possible values for `type` are:
 
 Payee information consists of basic account details. Amounts are chosen by the sender.
 
-Example Receiver:
+Example Webfinger response:
 ``` json
 {
-  "type": "payee",
-  "account": "ilpdemo.red.bob",
-  "currency_code": "USD",
-  "currency_symbol": "$",
-  "name": "Bob Dylan",
-  "image_url": "https://red.ilpdemo.org/api/receivers/bob/profile_pic.jpg"
+  "subject": "acct:bob@red.ilpdemo.org",
+  "properties": {
+    "https://interledger.org/rel/spsp/type": "payee",
+    "https://interledger.org/rel/spsp/account": "ilpdemo.red.bob",
+    "https://interledger.org/rel/spsp/currency_code": "USD",
+    "https://interledger.org/rel/spsp/currency_symbol": "$",
+    "https://interledger.org/rel/spsp/name": "Bob Dylan",
+    "https://interledger.org/rel/spsp/image_url": "https://red.ilpdemo.org/api/receivers/bob/profile_pic.jpg"
+  },
+  "links": [
+    {
+      "rel": "https://interledger.org/rel/receiver",
+      "href": "https://red.ilpdemo.org/api/receivers/bob"
+    }
+  ]
 }
 ```
 
@@ -175,16 +194,25 @@ Content-Type: application/json
 
 Invoice information includes an exact amount as well as the status of the invoice. (Invoices can only be paid once.)
 
-Example Receiver:
+Example Webfinger response:
 ``` json
 {
-  "type": "invoice",
-  "account": "ilpdemo.red.amazon.111-7777777-1111111",
-  "currency_code": "USD",
-  "currency_symbol": "$",
-  "amount": "10.40",
-  "status": "unpaid",
-  "invoice_info": "https://www.amazon.com/gp/your-account/order-details?ie=UTF8&orderID=111-7777777-1111111"
+  "subject": "acct:111-7777777-1111111@acme.ilpdemo.org",
+  "properties": {
+    "https://interledger.org/rel/spsp/type": "invoice",
+    "https://interledger.org/rel/spsp/account": "ilpdemo.red.acme.111-7777777-1111111",
+    "https://interledger.org/rel/spsp/currency_code": "USD",
+    "https://interledger.org/rel/spsp/currency_symbol": "$",
+    "https://interledger.org/rel/spsp/amount": "10.40",
+    "https://interledger.org/rel/spsp/status": "unpaid",
+    "https://interledger.org/rel/spsp/invoice_info": "https://www.amazon.com/gp/your-account/order-details?ie=UTF8&orderID=111-7777777-1111111"
+  },
+  "links": [
+    {
+      "rel": "https://interledger.org/rel/receiver",
+      "href": "https://acme.ilpdemo.org/api/receivers/111-7777777-1111111"
+    }
+  ]
 }
 ```
 
@@ -271,31 +299,3 @@ Content-Type: application/json
   "error": "Daily incoming funds limit exceeded"
 }
 ```
-
-## Appendix A: (Optional) Webfinger Discovery
-
-Whenever possible, receiver URLs should be exchanged out-of-band and discovery should be skipped. However, in some cases, it may be useful to have a standardized user-friendly identifier. This discovery method describes how to resolve such an identifier to an SPSP receiver endpoint.
-
-First, the sender uses Webfinger ([RFC 7033](https://tools.ietf.org/html/rfc7033)) to look up an identifier (e.g. `bob@red.ilpdemo.org`):
-
-``` http
-GET /.well-known/webfinger?resource=acct%3Abob%40red.ilpdemo.org HTTP/1.1
-Host: red.ilpdemo.org
-Accept: application/json
-```
-``` http
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "subject": "acct:bob@red.ilpdemo.org",
-  "links": [
-    {
-      "rel": "https://interledger.org/rel/receiver",
-      "href": "https://red.ilpdemo.org/api/receivers/bob"
-    }
-  ]
-}
-```
-[Try this request](https://red.ilpdemo.org/.well-known/webfinger?resource=acct%3Abob%40red.ilpdemo.org)
-
