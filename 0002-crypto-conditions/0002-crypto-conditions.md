@@ -269,7 +269,7 @@ A description of crypto-conditions is provided in this document using Abstract S
 
 Implementations of this specificiation MUST support encoding and decoding using Distinguished Encoding Rules (DER) as defined in [ITU.X690.2015](#itu.X690.2015). This is the canonical encoding format.
 
-Alternative encodings may be used to represent top-level conditions and fulfillments but to ensure a determinisitic outcome in producing the condition fingerprint content, including any sub-conditions, MUST be DER encoded prior to hashing.
+Alternative encodings may be used to represent top-level conditions and fulfillments but to ensure a determinisitic outcome in producing the condition fingerprint content, any sub-conditions MUST be DER encoded prior to hashing.
 
 The excpetion is the PREIMAGE-SHA-256 condition where the fingerprint content is the raw preimage which is not encoded prior to hashing. This is to allow a PREIMAGE-SHA-256 crypto-condition to be used in systems where "hash-locks" are already in use.
 
@@ -307,7 +307,7 @@ Conditions are encoded as follows:
       rsaSha256       (3),
       ed25519Sha256   (4)
     }
-
+    
 ### Fingerprint
 
 The fingerprint is an octet string uniquely representing the condition with respect to other conditions **of the same type**. 
@@ -354,45 +354,65 @@ For example, a compound condition that contains an ED25519-SHA-256 crypto-condit
 
 The ASN.1 definition for fulfillments is defined as follows:
 
-    Fulfillment ::= SET OF Subfulfillment
+	--FULFILLMENTS
+
+    Fulfillment ::= SEQUENCE OF Subfulfillment
 
     Subfulfillment ::= CHOICE {
-      preimageSubfulfillment   [0] PreimageSubfulfillment,
-      prefixSubfulfillment     [1] PrefixSubfulfillment,
-      thresholdSubfulfillment  [2] ThresholdSubfulfillment,
-      rsaSha256Subfulfillment  [3] RsaSha256Subfulfillment,
-      ed25519Subfulfillment    [4] Ed25519Subfulfillment
+      unfulfilledSubcondition  [0] Condition,
+      preimageSubfulfillment   [1] PreimageSubfulfillment,
+      prefixSubfulfillment     [2] PrefixSubfulfillment,
+      thresholdSubfulfillment  [3] ThresholdSubfulfillment,
+      rsaSha256Subfulfillment  [4] RsaSha256Subfulfillment,
+      ed25519Subfulfillment    [5] Ed25519Subfulfillment
     }
 
-    PreimageSubfulfillment ::= SEQUENCE {
-      preimage OCTET STRING
-    }
+The internal structure of a fulfillment is a SEQUENCE of one or more sub-fulfillments where any compound sub-fulfillments (PREFIX-SHA256 and THRESHOLD-SHA-256) contain references to other sub-fulfillments in the form of the index of that sub-fulfillment in this SEQUENCE.
 
-    PrefixSubfulfillment ::= SEQUENCE {
-      prefix OCTET STRING,
-      subcondition Condition
-    }
+The first sub-fulfillment in the SEQUENCE MUST be the root sub-fulfillment. i.e. No other sub-fulfillment may reference sub-fulfillment index 0.
 
-    ThresholdSubfulfillment ::= SEQUENCE {
-      threshold INTEGER (1..65535),
-      subconditions SEQUENCE OF Condition
-    }
+All sub-fulfillments in the SEQUENCE (except the first sub-fulfillment, index: 0) MUST be referenced by another sub-fulfillment. Implementations that process fulfillment and find unreferenced sub-fulfillments MUST reject the fulfillment.
 
-    RsaSha256Subfulfillment ::= SEQUENCE {
-      publicKey RSAPublicKey,
-      signature OCTET STRING
-    }
+Implementors should note that the tag numbers for the Subfulfillment type do not correspond to the type ids in the [Crypto-Condition Type Registry](#crypto-conditions-type-registry). This is to accomodate the inclusion of unfulfilled conditions in the SEQUENCE of sub-fulfillments that make up a fulfillment.
 
-    Ed25519Subfulfillment ::= SEQUENCE {
-      publicKey OCTET STRING (SIZE(32)),
-      signature OCTET STRING (SIZE(64))
-    }
+## Example
 
-    -- IMPORTS from [RFC8017]{#8017}
-    RSAPublicKey ::= SEQUENCE {
-      modulus INTEGER,  -- n
-      publicExponent INTEGER -- e
-    }
+The following ASN.1 value-type notation describes a fulfillment with 3 sub-fulfillments, one of which is a PREFIX-SHA-256 type and therefore also contains a sub-fulfillment. The 3rd sub-fulfillment of the root THRESHOLD-SHA-256 sub-fulfillment is a PREIMAGE-SHA-256 type crypto-condition and is not fulfilled.
+
+Assuming the two RSA signatures are valid this fulfillment is valid as 2 of the 3 sub-fulfillments are provided and valid.
+
+Note that even if the keys of the two RSA-SHA-256 sub-fulfillments are the same the signatures will differ as the signature of the sub-fulfillment with index 4 is verified against a prefixed message. 
+
+   example Fulfillment :: {
+       thresholdSubfulfillment : {
+           threshold 2,
+           subfulfillments {
+               1, 2, 3
+           }
+       },
+       rsaSha256Subfulfillment : {
+           publicKey {
+               modulus 1234567890,
+               publicExponent 65537
+           },
+           signature '...'H
+       },
+       prefixSubfulfillment : {
+           prefix '...'H,
+           subfulfillment 4
+       },
+       unfulfilledSubcondition : preimageSha256Condition : {
+           fingerprint '...'H,
+           cost 65
+       },
+       rsaSha256Subfulfillment : {
+           publicKey {
+               modulus 1234567890,
+               publicExponent 65537
+           },
+           signature '...'H
+       }
+   }
     
 # Crypto-Condition Types {#crypto-condition-types}
 The following condition types are defined in this version of the specification. While support for additional crypto-condition types may be added in the future and will be registered in the IANA maintained [Crypto-Condition Type Registry](#crypto-conditions-type-registry), no other types are supported by this specification.
@@ -458,12 +478,15 @@ The cost is the size, in bytes, of the **unencoded** prefix plus the cost of the
 ### ASN.1 {#prefix-sha-256-condition-asn1}
 
     -- Condition Fingerprint
-    PrefixSha256FingerprintContents ::= PrefixSubfulfillment
+    PrefixSha256FingerprintContents ::= SEQUENCE {
+      prefix OCTET STRING,
+      subcondition Condition
+    }
 
     -- Fulfillment 
     PrefixSubfulfillment ::= SEQUENCE {
       prefix OCTET STRING,
-      subcondition Condition
+      subfulfillment INTEGER (1..65535)
     }
 
 ### Condition Format {#prefix-sha-256-condition-type-condition}
@@ -477,7 +500,7 @@ prefix
 : is an arbitrary octet string which will be prepended to the message during validation of the sub-fulfillment.
 
 subcondition
-: is the condition derived from the sub-fulfillment of this parent fulfillment.
+: is the index of the sub-fulfillment
 
 ### Validating {#prefix-sha-256-condition-type-validating}
 
@@ -508,18 +531,20 @@ Implementations SHOULD only validate as many sub-fulfillments as are required to
 ### ASN.1 {#threshold-sha-256-condition-asn1}
 
     -- Condition Fingerprint
-    ThresholdSubfulfillment ::= SEQUENCE {
+    ThresholdSha256FingerprintContents ::= SEQUENCE {
       threshold INTEGER (1..65535),
       subconditions SEQUENCE OF Condition
     }
 
     -- Fulfillment 
-    ThresholdSha256FingerprintContents ::= ThresholdSubfulfillment    
+    ThresholdSubfulfillment ::= SEQUENCE {
+      threshold INTEGER (1..65535),
+      subfulfillments SEQUENCE OF INTEGER (1..65535)
+    }
     
 ### Condition Format {#threshold-sha-256-condition-type-condition}
 
-The fingerprint of a THRESHOLD-SHA-256 condition is the SHA-256 digest of the DER encoded fingerprint contents which are identical 
-to the contents of the ThresholdSubfulfillment.
+The fingerprint of a THRESHOLD-SHA-256 condition is the SHA-256 digest of the DER encoded fingerprint contents as defined above. The SEQUENCE of DER encoded sub-conditions is sorted first based on encoded length, shortest first and then elements of the same length are sorted in lexicographic (big-endian) order, smallest first.
 
 ### Fulfillment Format {#threshold-sha-256-condition-type-fulfillment}
 
@@ -527,7 +552,7 @@ threshold
 : is a number and MUST be an integer in the range 1 ... 65535. In order to fulfill a threshold condition, the count of the sub-conditions that are satisfied by one of the provided fulfillments MUST be greater than or equal to the threshold.
 
 subconditions
-: is the set of sub-conditions, F.threshold of which MUST be satisfied by provided fulfillments. The list of DER encoded sub-conditions is sorted first based on encoded length, shortest first and then elements of the same length are sorted in lexicographic (big-endian) order, smallest first.
+: is the set indexes of sub-fulfillments, F.threshold of which MUST be satisfied by provided fulfillments. 
 
 ### Validating {#threshold-sha-256-condition-type-validating}
 
@@ -638,15 +663,16 @@ The public key and signature are a fixed size therefore the cost for an ED25519 
 ### ASN.1 {#ed25519-sha-256-condition-asn1}
 
     -- Condition Fingerprint
+    Ed25519Sha256FingerprintContents ::= SEQUENCE {
+      publicKey OCTET STRING (SIZE(32))
+    }
+
+    -- Fulfillment 
     Ed25519Subfulfillment ::= SEQUENCE {
       publicKey OCTET STRING (SIZE(32)),
       signature OCTET STRING (SIZE(64))
     }
 
-    -- Fulfillment 
-    Ed25519Sha256FingerprintContents ::= SEQUENCE {
-      publicKey OCTET STRING (SIZE(32))
-    }
 
 ### Condition Format {#ed25519-sha-256-condition-type-condition}
 
@@ -747,29 +773,30 @@ Crypto-Conditions DEFINITIONS EXPLICIT TAGS ::= BEGIN
       publicExponent INTEGER -- e
     }
 
-    -- CORE STRUCTURES
+    -- Core Structures
 
     Crypto-Condition ::= Condition
+
     Crypto-Fulfillment ::= Fulfillment
 
-    -- Conditions
+	--CONDITIONS
 
     Condition ::= CHOICE {
-      preimageSha256Condition     [0] Simple256Condition,
-      prefixSha256Condition       [1] Compound256Condition,
-      thresholdSha256Condition    [2] Compound256Condition,
-      rsaSha256Condition          [3] Simple256Condition,
-      ed25519Sha256Condition      [4] Simple256Condition
+      preimageSha256Condition  [0] Simple256Condition,
+      prefixSha256Condition    [1] Compound256Condition,
+      thresholdSha256Condition [2] Compound256Condition,
+      rsaSha256Condition       [3] Simple256Condition,
+      ed25519Sha256Condition   [4] Simple256Condition
     }
 
     Simple256Condition ::= SEQUENCE {
       fingerprint OCTET STRING (SIZE(32)),
-      maxCost INTEGER (0..4294967295)
+      cost INTEGER (0..4294967295)
     }
 
     Compound256Condition ::= SEQUENCE {
       fingerprint OCTET STRING (SIZE(32)),
-      maxCost INTEGER (0..4294967295),
+      cost INTEGER (0..4294967295),
       subtypes ConditionTypes
     }
 
@@ -781,16 +808,17 @@ Crypto-Conditions DEFINITIONS EXPLICIT TAGS ::= BEGIN
       ed25519Sha256   (4)
     }
     
-    -- Fulfillments
+	--FULFILLMENTS
 
-    Fulfillment ::= SET OF Subfulfillment
+    Fulfillment ::= SEQUENCE OF Subfulfillment
 
     Subfulfillment ::= CHOICE {
-      preimageSubfulfillment   [0] PreimageSubfulfillment,
-      prefixSubfulfillment     [1] PrefixSubfulfillment,
-      thresholdSubfulfillment  [2] ThresholdSubfulfillment,
-      rsaSha256Subfulfillment  [3] RsaSha256Subfulfillment,
-      ed25519Subfulfillment    [4] Ed25519Subfulfillment
+      unfulfilledSubcondition  [0] Condition,
+      preimageSubfulfillment   [1] PreimageSubfulfillment,
+      prefixSubfulfillment     [2] PrefixSubfulfillment,
+      thresholdSubfulfillment  [3] ThresholdSubfulfillment,
+      rsaSha256Subfulfillment  [4] RsaSha256Subfulfillment,
+      ed25519Subfulfillment    [5] Ed25519Subfulfillment
     }
 
     PreimageSubfulfillment ::= SEQUENCE {
@@ -799,12 +827,12 @@ Crypto-Conditions DEFINITIONS EXPLICIT TAGS ::= BEGIN
 
     PrefixSubfulfillment ::= SEQUENCE {
       prefix OCTET STRING,
-      subcondition Condition
+      subfulfillment INTEGER (1..65535)
     }
 
     ThresholdSubfulfillment ::= SEQUENCE {
       threshold INTEGER (1..65535),
-      subconditions SEQUENCE OF Condition
+      subfulfillments SEQUENCE OF INTEGER (1..65535)
     }
 
     RsaSha256Subfulfillment ::= SEQUENCE {
@@ -817,20 +845,27 @@ Crypto-Conditions DEFINITIONS EXPLICIT TAGS ::= BEGIN
       signature OCTET STRING (SIZE(64))
     }
 
-    -- Fingerprint Content
+	--FINGERPRINTS
 
-    -- The PreimageSha256 fingerprint is the SHA256 hash of the raw preimage
+    -- The PREIMAGE-SHA-256 condition fingerprint content is not encoded
+    -- The fingerprint content is the preimage
 
-    PrefixSha256FingerprintContents ::= PrefixSubfulfillment
-    
-    ThresholdSha256FingerprintContents ::= ThresholdSubfulfillment    
-    
-    RsaSha256FingerprintContents ::= RSAPublicKey
-    
+    PrefixSha256FingerprintContents ::= SEQUENCE {
+      prefix OCTET STRING,
+      subcondition Condition
+    }
+
+    ThresholdSha256FingerprintContents ::= SEQUENCE {
+      threshold INTEGER (1..65535),
+      subconditions SEQUENCE OF Condition
+    }
+
+    RSASha256FingerprintContents ::= RSAPublicKey
+
     Ed25519Sha256FingerprintContents ::= SEQUENCE {
       publicKey OCTET STRING (SIZE(32))
     }
-        
+    
 END
 
 # IANA Considerations {#appendix-e}
