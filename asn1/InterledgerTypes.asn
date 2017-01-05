@@ -1,4 +1,6 @@
-InterledgerTypes DEFINITIONS AUTOMATIC TAGS ::=
+InterledgerTypes
+DEFINITIONS
+AUTOMATIC TAGS ::=
 BEGIN
 
 IMPORTS
@@ -7,27 +9,21 @@ IMPORTS
 	FROM GenericTypes
 ;
 
--- Characters used in ILP addresses
-hyphen IA5String ::= {2,13}
-period IA5String ::= {2,14}
-number0 IA5String ::= {3,0}
-number9 IA5String ::= {3,9}
-uppercaseA IA5String ::= {4,1}
-uppercaseZ IA5String ::= {5,10}
-underscore IA5String ::= {5,15}
-lowercaseA IA5String ::= {6,1}
-lowercaseZ IA5String ::= {7,10}
-tilde IA5String ::= {7,14}
+-- Readable names for special characters that may appear in ILP addresses
+hyphen IA5String ::= "-"
+period IA5String ::= "."
+underscore IA5String ::= "_"
+tilde IA5String ::= "~"
 
 -- A standard interledger address
 Address ::= IA5String
 	(FROM
 		( hyphen
 		| period
-		| number0..number9
-		| uppercaseA..uppercaseZ
+		| "0".."9"
+		| "A".."Z"
 		| underscore
-		| lowercaseA..lowercaseZ
+		| "a".."z"
 		| tilde )
 	)
 

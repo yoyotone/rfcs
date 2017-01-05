@@ -1,0 +1,20 @@
+CustomHeader
+DEFINITIONS
+AUTOMATIC TAGS ::=
+BEGIN
+
+IMPORTS
+	VarBytes
+	FROM GenericTypes
+;
+
+CustomHeader ::= SEQUENCE {
+    -- Link relation / header type (recommended to be a URI/IRI)
+	relation UTF8String,
+    -- Content type of custom header (mime type)
+	contentType PrintableString,
+	-- Header data
+	data VarBytes
+}
+
+END

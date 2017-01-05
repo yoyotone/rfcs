@@ -1,0 +1,15 @@
+UserDataHeader
+DEFINITIONS
+AUTOMATIC TAGS ::=
+BEGIN
+
+IMPORTS
+	VarBytes
+	FROM GenericTypes
+;
+
+UserDataHeader ::= SEQUENCE {
+	data VarBytes
+}
+
+END

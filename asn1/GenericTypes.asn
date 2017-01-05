@@ -1,4 +1,6 @@
-GenericTypes DEFINITIONS AUTOMATIC TAGS ::=
+GenericTypes 
+DEFINITIONS
+AUTOMATIC TAGS ::=
 BEGIN
 
 -- Small Integers

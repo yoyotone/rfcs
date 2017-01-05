@@ -1,0 +1,16 @@
+CustomHeader
+DEFINITIONS
+AUTOMATIC TAGS ::=
+BEGIN
+
+IMPORTS
+	VarBytes
+	FROM GenericTypes
+;
+
+CustomHeader ::= SEQUENCE {
+	typeUri UTF8String,
+	value VarBytes
+}
+
+END

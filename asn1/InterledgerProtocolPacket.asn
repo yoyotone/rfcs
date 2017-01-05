@@ -13,6 +13,12 @@ IMPORTS
 
 	SourceRoutingHeader
 	FROM SourceRoutingHeader
+
+	UserDataHeader
+	FROM UserDataHeader
+
+	CustomHeader
+	FROM CustomHeader
 ;
 
 HEADER ::= CLASS
@@ -24,17 +30,21 @@ HEADER ::= CLASS
 
 HeaderSet HEADER ::=
 	{
-	{0 InterledgerProtocolHeader} |
-	{256 SourceRoutingHeader}
+	{1 InterledgerProtocolHeader} |
+	{240 UserDataHeader} |
+--	{144 SourceRoutingHeader} |
+	{16383 CustomHeader} |
+	{32767 CustomHeader} |
+	{49151 CustomHeader} |
+	{65535 CustomHeader}
 	}
 
-InterledgerPacket ::= SEQUENCE {
-	headers SEQUENCE OF Header,
-	userData VarBytes
-}
+InterledgerPacket ::= SEQUENCE (SIZE (1..65535)) OF Header
 
 Header ::= SEQUENCE {
+	-- Two byte type ID
 	headerType HEADER.&typeId ({HeaderSet}),
+	-- Length-prefixed header
 	header HEADER.&Type ({HeaderSet}{@headerType})
 }
 
