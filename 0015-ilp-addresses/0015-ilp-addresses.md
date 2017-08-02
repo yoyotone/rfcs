@@ -1,4 +1,8 @@
-# ILP Addresses
+---
+title: ILP Addresses
+draft: 1
+---
+# ILP Addresses - v1.0.0
 
 _ILP addresses_ provide a way to [route](#routing) payments to their intended destination through a recursive series of hops, including any number of ILP Connectors. (This happens after the payment is set up on by a higher-level payment setup protocol such as [SPSP](../0009-simple-payment-setup-protocol/0009-simple-payment-setup-protocol.md).) Addresses are not meant to be user-facing, but allow several ASCII characters for easy debugging.
 
@@ -49,11 +53,17 @@ segment     = 1*( ALPHA / DIGIT / "_" / "~" / "-" )
 
 You can also use the following regular expressions to verify the same requirements:
 
-| Address Type        | Regular Expression                                     |
-|:--------------------|:-------------------------------------------------------|
-| All addresses       | `(?=^.{1,1023}$)^(g|private|example|peer|self|test[1-3])[.]([a-zA-Z0-9_~-]+[.])*([a-zA-Z0-9_~-]+)?$` |
-| Address prefix      | `(?=^.{1,1023}$)^(g|private|example|peer|self|test[1-3])[.]([a-zA-Z0-9_~-]+[.])*$` |
-| Destination address | `(?=^.{1,1023}$)^(g|private|example|peer|self|test[1-3])[.]([a-zA-Z0-9_~-]+[.])+[a-zA-Z0-9_~-]+$` |
+All Addresses:
+
+    (?=^.{1,1023}$)^(g|private|example|peer|self|test[1-3])[.]([a-zA-Z0-9_~-]+[.])*([a-zA-Z0-9_~-]+)?$
+    
+Address prefix:
+
+    (?=^.{1,1023}$)^(g|private|example|peer|self|test[1-3])[.]([a-zA-Z0-9_~-]+[.])*$
+
+Destination address
+
+    (?=^.{1,1023}$)^(g|private|example|peer|self|test[1-3])[.]([a-zA-Z0-9_~-]+[.])+[a-zA-Z0-9_~-]+$
 
 (If your regular expression engine does not support lookahead, you must drop the first parenthesis and separately enforce the overall length requirement of 1023 characters or less.)
 

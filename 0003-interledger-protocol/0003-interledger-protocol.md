@@ -1,3 +1,7 @@
+---
+title: The Interledger Protocol (ILP)
+draft: 3
+---
 # Interledger Protocol (ILP)
 
 ## Preface
@@ -20,7 +24,7 @@ The interledger protocol is intentionally limited in scope to provide the functi
 
 This protocol is called on by hosts through higher level protocol modules in an interledger environment. Interledger protocol modules call on local ledger protocols to carry the interledger payment to the next connector or destination account.
 
-For example, a [`Simple Payment Setup Protocol (SPSP)`](../0009-simple-payment-setup-protocol/0009-simple-payment-setup-protocol.md) module would call the interledger module with the address and other parameters in the interledger packet to send a payment. The interledger module would send a transfer to the next connector or destination account along with the interledger packet and according to the parameters given. The transfer and interledger packet would be received by the next host's interledger module and handled by each each successive connector and finally the destination's SPSP module.
+For example, a [`Simple Payment Setup Protocol (SPSP)`](../0009-simple-payment-setup-protocol/0009-simple-payment-setup-protocol.md) module would call the interledger module with the address and other parameters in the interledger packet to send a payment. The interledger module would send a transfer to the next connector or destination account along with the interledger packet and according to the parameters given. The transfer and interledger packet would be received by the next host's interledger module and handled by each successive connector and finally the destination's SPSP module.
 
 In the Ripple case, for example, the interledger module would call on a local ledger module which would create a Ripple transaction with the interledger packet attached to transmit to the Ripple Consensus Ledger. The Ripple address would be derived from the interledger address by the local ledger interface and would be the address of some account in the Ripple network, which might belong to a connector to other ledgers.
 
@@ -64,7 +68,7 @@ The protocol uses transfer holds to ensure a sender's funds are delivered to the
                 Local Ledger 1          Local Ledger 2
 
 
-1. The sending application uses a higher-level protocol to negotiate the address, an amount, and a cryptographic condition with the destination. It calls on the interledger module to send a payment with these parameters.
+1. The sending application uses a higher-level protocol to negotiate the address, an amount, a cryptographic condition, and a timeout with the destination. It calls on the interledger module to send a payment with these parameters.
 
 2. The interledger module prepares the ILP packet, chooses the account to send the local ledger transfer to, and passes them to the local ledger interface.
 
@@ -230,7 +234,7 @@ Implementations of ILP SHOULD NOT depend on the `name` instead of the `code`. Th
 
     Timestamp ::= GeneralizedTime
 
-Date and time when the error was initially emitted.
+Date and time when the error was initially emitted. This MUST be expressed in the UTC + 0 (Z) timezone.
 
 #### data
 
