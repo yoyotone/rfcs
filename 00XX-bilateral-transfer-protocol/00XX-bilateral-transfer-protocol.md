@@ -60,11 +60,12 @@ spec](https://github.com/interledger/rfcs/blob/master/asn1/BilateralTransferProt
   ASN.1 spec.
 
 - A **Sub-Protocol** is a protocol which isn't defined by BTP and is carried
-  in the protocol data (see below).
+  in the protocol data (see below). The first one is the primary sub-protocol,
+  subsequent entries are secondary sub-protocols.
 
 - A **BTP Connection** is a websocket connection over which BTP packets are
-  sent. Websockets are used because they provide message framing and allow BTP
-to use HTTP requests for authentication.
+  sent. Websockets (as opposed to raw TLS sockets) are used because they provide
+  message framing and can be used from the browser.
 
 - **BTP Packets** are the protocol data units described in this document. They are
   formally defined in the [BTP ASN.1 spec](https://github.com/interledger/rfcs/blob/master/asn1/BilateralTransferProtocol.asn).
@@ -174,6 +175,31 @@ ProtocolData ::= SEQUENCE OF SEQUENCE {
   data OCTET STRING
 }
 ```
+
+## Authentication
+
+Before anything else, when a client connects to a server, it sends a special
+`Message` request. Its primary `protocolData` entry MUST have name `'auth'`
+and empty data, and among the secondary entries, there MUST be a UTF-8
+`'auth_token'` entry, and a UTF-8 `'auth_username'` entry. The further secondary
+protocol data entries of this `Message` request MAY also be used to send
+additional information to the server. In situations where no authentication
+is needed, the `'auth_token'` and `'auth_username'` data can be set to the
+empty string, but they cannot be omitted.
+
+The server responds with a `Response` or `Error` as appropriate. Again, the
+`protocolData` field there MAY be used to send additional information to
+the client.
+
+If the server sent an `Error`, it subsequently closes the connection.
+If the server sent a `Response`, the BTP connection is open, until either
+one of the parties closes it. At the BTP level, the client and server play
+identical roles.
+
+If the client does not send an Auth packet within a reasonable time, the
+server closes the connection. If the client did send an Auth packet, but
+got neither a `Response` nor an `Error back from the server, the client
+closes the connection.
 
 ## Flow
 
