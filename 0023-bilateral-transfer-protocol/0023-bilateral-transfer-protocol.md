@@ -191,6 +191,10 @@ additional information to the server. In situations where no authentication
 is needed, the `'auth_token'` and `'auth_username'` data can be set to the
 empty string, but they cannot be omitted.
 
+If the client sends any BTP call that is not a Message, or sends a Message call
+whose primary sub-protocol is not `auth`, the server should respond with an `Error`
+and close the connection.
+
 The server responds with a `Response` or `Error` as appropriate. Again, the
 `protocolData` field there MAY be used to send additional information to
 the client.
