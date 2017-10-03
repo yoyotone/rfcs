@@ -211,6 +211,8 @@ In order to understand the different BTP calls, it is necessary to distinguish b
 entry defines what type of action or information is requested of the recipient of the message. The secondary sub-protocols should not request additional actions or information. If multiple actions or
 pieces of information are required, multiple separate Messages should be sent. The secondary sub-protocols should only modify the request made in the primary sub-protocol, or provide additional contextual data which can be consumed in a readonly way (without affecting the result).
 
+For example, the primary sub-protocol entry of a Message might represent a quote request, while one additional secondary sub-protocol entry may be present, indicating this request was forwarded by a proxy.
+
 Likewise, only the primary sub-protocol data in a Response indicates whether result of the request from the Message being responded to actually succeeded or not.
 
 In Error, Prepare, Fulfill, and Reject calls, the distinction between primary and secondary sub-protocol entries is less strict.
