@@ -197,7 +197,12 @@ and close the connection.
 
 The server responds with a `Response` or `Error` as appropriate. Again, the
 `protocolData` field there MAY be used to send additional information to
-the client.
+the client. To be clear, the server responds with an `Error` if:
+
+* any other packet is sent before the auth data
+* the provided authentication data is invalid or incorrect
+* any of the other protocol rules are violated (e.g. having two subprotos with the same name)
+* it takes too long before the authentication data is sent.
 
 If the server sent an `Error`, it subsequently closes the connection.
 If the server sent a `Response`, the BTP connection is open, until either
