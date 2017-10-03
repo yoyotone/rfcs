@@ -216,6 +216,8 @@ and then closes the connection. If the client did send an Auth packet, but
 got neither a `Response` nor an `Error` back from the server, the client
 closes the connection.
 
+If the connection is ever dropped and reconnected then it must be re-authenticated.
+
 ## Sub-protocols
 
 In order to understand the different BTP calls, it is necessary to distinguish between the first ("primary") and subsequent ("secondary") sub-protocol entries. The primary sub-protocol
