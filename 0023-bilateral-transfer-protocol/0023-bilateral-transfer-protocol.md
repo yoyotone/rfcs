@@ -205,6 +205,16 @@ server closes the connection. If the client did send an Auth packet, but
 got neither a `Response` nor an `Error back from the server, the client
 closes the connection.
 
+## Sub-protocols
+
+In order to understand the different BTP calls, it is necessary to distinguish between the first ("primary") and subsequent ("secondary") sub-protocol entries. The primary sub-protocol
+entry defines what type of action or information is requested of the recipient of the message. The secondary sub-protocols should not request additional actions or information. If multiple actions or
+pieces of information are required, multiple separate Messages should be sent. The secondary sub-protocols should only modify the request made in the primary sub-protocol, or provide additional contextual data which can be consumed in a readonly way (without affecting the result).
+
+Likewise, only the primary sub-protocol data in a Response indicates whether result of the request from the Message being responded to actually succeeded or not.
+
+In Error, Prepare, Fulfill, and Reject calls, the distinction between primary and secondary sub-protocol entries is less strict.
+
 ## Flow
 
 BTP uses a simple RPC flow. A request-type BTP packet is sent, and a
