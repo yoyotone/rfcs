@@ -183,7 +183,8 @@ ProtocolData ::= SEQUENCE OF SEQUENCE {
 ## Authentication
 
 Before anything else, when a client connects to a server, it sends a special
-`Message` request. Its primary `protocolData` entry MUST have name `'auth'`
+`Message` request. Its primary `protocolData` entry MUST have name `'auth'`,
+content type `MIME_APPLICATION_OCTET_STREAM`,
 and empty data, and among the secondary entries, there MUST be a UTF-8
 `'auth_token'` entry, and a UTF-8 `'auth_username'` entry. The further secondary
 protocol data entries of this `Message` request MAY also be used to send
