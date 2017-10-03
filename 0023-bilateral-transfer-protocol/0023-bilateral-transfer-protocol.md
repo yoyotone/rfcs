@@ -210,8 +210,9 @@ one of the parties closes it. At the BTP level, the client and server play
 identical roles.
 
 If the client does not send an Auth packet within a reasonable time, the
-server closes the connection. If the client did send an Auth packet, but
-got neither a `Response` nor an `Error back from the server, the client
+server optionally sends a Message informing the client that the authentication timed out,
+and then closes the connection. If the client did send an Auth packet, but
+got neither a `Response` nor an `Error` back from the server, the client
 closes the connection.
 
 ## Sub-protocols
