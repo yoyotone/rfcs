@@ -1,10 +1,10 @@
 ---
 title: The Pre-Shared Key Transport Protocol (PSK)
-draft: 1
+draft: 3
 ---
 # Pre-Shared Key Transport Protocol (PSK)
 
-The Pre-Shared Key (PSK) protocol is an end-to-end transport protocol, used by the sender and receiver of an ILP payment to decide on a condition and fulfillment for a payment. By default, the protocol also encrypts any additional data sent along with the payment, using [AES-256-GCM](https://en.wikipedia.org/wiki/Galois/Counter_Mode). The full ILP payment is authenticated through an [HMAC-SHA-256](https://en.wikipedia.org/wiki/Hash-based_message_authentication_code) which is used to generate the fulfillment of a PSK payment. The entirety of the PSK data, including public headers, encrypted private headers, and encrypted private data, is encoded into an octet-stream that forms the data portion of the [ILP Packet](https://github.com/interledger/rfcs/blob/master/0003-interledger-protocol/0003-interledger-protocol.md). The PSK data is authenticated via AES-256-GCM in addition to the HMAC-SHA-256 which authenticates the full ILP payment.
+The Pre-Shared Key (PSK) protocol is an end-to-end transport protocol, used by the sender and receiver of an ILP payment to decide on a condition and fulfillment for a payment. By default, the protocol also encrypts any additional data sent along with the payment, using [AES-256-GCM](https://en.wikipedia.org/wiki/Galois/Counter_Mode). The full ILP payment is authenticated through an [HMAC-SHA-256](https://en.wikipedia.org/wiki/Hash-based_message_authentication_code) which is used to generate the fulfillment of a PSK payment. The entirety of the PSK data, including public headers, encrypted private headers, and encrypted private data, is encoded into an octet-stream that forms the data portion of the [ILP Packet](https://interledger.org/rfcs/0003-interledger-protocol/draft-4.html#specification). The PSK data is authenticated via AES-256-GCM in addition to the HMAC-SHA-256 which authenticates the full ILP payment.
 
 Pseudocode for this protocol can be read [at the bottom of this spec](#pseudocode).
 
@@ -33,7 +33,11 @@ A disadvantage of PSK is that it is repudiable. Although the sender does get cry
 
 ## Data Format
 
-The PSK details are divided into two sets of headers. Each set of headers is formatted like those found in [HTTP Requests](https://tools.ietf.org/html/rfc7230#section-3.2). Application data is appended to the private headers, after a blank line. This object is then encrypted and appended to the public headers as binary data, after a blank line. Both private and public headers are parsed in the exact same way as HTTP headers. All strings are UTF-8 encoded.
+The PSK details are divided into two sets of headers. Each set of headers is formatted like those found in [HTTP Requests](https://tools.ietf.org/html/rfc7230#section-3.2) and follows the format `Header-Name: Header-Value`. Note that implementations have to validate inputs before using it as part of `Header-Name` or `Header-Value`. 
+
+**PSK Headers MUST NOT contain any line feed characters such as `\n`**. Implementations failing to enforce this requirement may be vulnerable to [Header Injection Attacks](https://en.wikipedia.org/wiki/HTTP_header_injection).
+
+Application data is appended to the private headers, after a blank line. This object is then encrypted and appended to the public headers as binary data, after a blank line. Both private and public headers are parsed in the exact same way as HTTP headers. All strings are UTF-8 encoded.
 
 ### Nonce
 

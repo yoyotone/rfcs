@@ -1,6 +1,6 @@
 ---
 title: The Javascript Ledger Plugin Interface
-draft: 2
+draft: 8
 ---
 # Javascript Ledger Plugin Interface
 
@@ -39,18 +39,18 @@ This spec depends on the [ILP spec](../0003-interledger-protocol/).
 | [**connect**](#event-connect) | `( ) ⇒` |
 | [**disconnect**](#event-disconnect) | `( ) ⇒` |
 | [**error**](#event-error) | `( ) ⇒` |
-| [**incoming_transfer**](#event-_transfer) | <code>( transfer:[IncomingTransfer](#incomingtransfer) ) ⇒</code> |
-| [**incoming_prepare**](#event-_prepare) | <code>( transfer:[IncomingTransfer](#incomingtransfer) ) ⇒</code> |
-| [**incoming_fulfill**](#event-_fulfill) | <code>( transfer:[IncomingTransfer](#incomingtransfer), fulfillment:String ) ⇒</code> |
-| [**incoming_reject**](#event-_reject) | <code>( transfer:[IncomingTransfer](#incomingtransfer), rejectionReason:[RejectionMessage](#class-rejectionmessage) ) ⇒</code> |
-| [**incoming_cancel**](#event-_cancel) | <code>( transfer:[IncomingTransfer](#incomingtransfer), cancellationReason:[RejectionMessage](#class-rejectionmessage) ) ⇒</code> |
+| [**incoming_transfer**](#event-_transfer) | <code>( transfer:[IncomingTransfer](#class-transfer) ) ⇒</code> |
+| [**incoming_prepare**](#event-_prepare) | <code>( transfer:[IncomingTransfer](#class-transfer) ) ⇒</code> |
+| [**incoming_fulfill**](#event-_fulfill) | <code>( transfer:[IncomingTransfer](#class-transfer), fulfillment:String ) ⇒</code> |
+| [**incoming_reject**](#event-_reject) | <code>( transfer:[IncomingTransfer](#class-transfer), rejectionReason:[RejectionMessage](#class-rejectionmessage) ) ⇒</code> |
+| [**incoming_cancel**](#event-_cancel) | <code>( transfer:[IncomingTransfer](#class-transfer), cancellationReason:[RejectionMessage](#class-rejectionmessage) ) ⇒</code> |
 | [**incoming_request**](#event-_request) | <code>( message:[Message](#class-message) ) ⇒</code> |
 | [**incoming_response**](#event-_response) | <code>( message:[Message](#class-message) ) ⇒</code> |
-| [**outgoing_transfer**](#event-_transfer) | <code>( transfer:[outgoingTransfer](#outgoingtransfer) ) ⇒</code> |
-| [**outgoing_prepare**](#event-_prepare) | <code>( transfer:[outgoingTransfer](#outgoingtransfer) ) ⇒</code> |
-| [**outgoing_fulfill**](#event-_fulfill) | <code>( transfer:[outgoingTransfer](#outgoingtransfer), fulfillment:String ) ⇒</code> |
-| [**outgoing_reject**](#event-_reject) | <code>( transfer:[outgoingTransfer](#outgoingtransfer), rejectionReason:[RejectionMessage](#class-rejectionmessage) ) ⇒</code> |
-| [**outgoing_cancel**](#event-_cancel) | <code>( transfer:[outgoingTransfer](#outgoingtransfer), cancellationReason:[RejectionMessage](#class-rejectionmessage) ) ⇒</code> |
+| [**outgoing_transfer**](#event-_transfer) | <code>( transfer:[outgoingTransfer](#class-transfer) ) ⇒</code> |
+| [**outgoing_prepare**](#event-_prepare) | <code>( transfer:[outgoingTransfer](#class-transfer) ) ⇒</code> |
+| [**outgoing_fulfill**](#event-_fulfill) | <code>( transfer:[outgoingTransfer](#class-transfer), fulfillment:String ) ⇒</code> |
+| [**outgoing_reject**](#event-_reject) | <code>( transfer:[outgoingTransfer](#class-transfer), rejectionReason:[RejectionMessage](#class-rejectionmessage) ) ⇒</code> |
+| [**outgoing_cancel**](#event-_cancel) | <code>( transfer:[outgoingTransfer](#class-transfer), cancellationReason:[RejectionMessage](#class-rejectionmessage) ) ⇒</code> |
 | [**outgoing_request**](#event-_request) | <code>( message:[Message](#class-message) ) ⇒</code> |
 | [**outgoing_response**](#event-_response) | <code>( message:[Message](#class-message) ) ⇒</code> |
 | [**info_change**](#event-info_change) | <code>( info:[LedgerInfo](#class-ledgerinfo) ) ⇒</code> |
@@ -67,7 +67,10 @@ This spec depends on the [ILP spec](../0003-interledger-protocol/).
 | [**AlreadyFulfilledError**]() | A requested transfer has already been fulfilled and cannot be modified |
 | [**TransferNotConditionalError**]() | A requested transfer is not conditional and cannot be rejected/fulfilled/etc. |
 | [**NotAcceptedError**]() | An operation has been rejected due to ledger-side logic |
+| [**InsufficientBalanceError**]() | An operation has been rejected because the source balance isn't high enough |
+| [**AccountNotFoundError**]() | An operation has been rejected because the account does not exist |
 | [**NoSubscriptionsError**]() | A transfer or message cannot be delivered because there are no active websockets |
+| [**RequestHandlerAlreadyRegisteredError**]() | The current request handler callback must be unset before a new one can be registered |
 
 ### Instance Management
 
@@ -220,8 +223,7 @@ are required.
 **`Promise.<null>`** A promise which resolves when the transfer has been submitted (but not necessarily accepted.)
 
 Rejects with `InvalidFieldsError` if required fields are missing from the transfer or malformed. Rejects with `DuplicateIdError` if a transfer with
-the given ID and different already exists. Rejects with `NotAcceptedError` if the transfer is rejected by the ledger due to insufficient balance or
-a nonexistant destination account.
+the given ID and different already exists. Rejects with `InsufficientBalanceError` if the transfer is rejected due to the source balance being too low. Rejects with `AccountNotFoundError` if the destination account does not exist. Rejects with `NotAcceptedError` if the transfer is otherwise rejected by the ledger.
 
 ###### Example
 ```js
@@ -473,10 +475,10 @@ left undefined (but not any other false-y value) if unused.
 | `String` | [ledger](#transferledger) | ILP Address prefix of the ledger |
 | `String` | [amount](#transferamount) | Integer transfer amount, in the ledger's base unit |
 | `String` | [ilp](#transferilp) | Base64-encoded ILP packet |
-| `Object` | [noteToSelf](#transfernotetoself) | Host-provided memo that should be stored with the transfer |
+| `Object` | [noteToSelf](#transfernotetoself-optional) | (Optional) host-provided memo that should be stored with the transfer |
 | `String` | [executionCondition](#transferexecutioncondition) | Cryptographic hold condition |
 | `String` | [expiresAt](#transferexpiresat) | Expiry time of the cryptographic hold |
-| `Object` | [custom](#transfercustom) | Object containing ledger plugin specific options |
+| `Object` | [custom](#transfercustom-optional) | (Optional) object containing ledger plugin specific options |
 
 ### Fields
 
@@ -519,14 +521,14 @@ An integer amount, represented as a string of base-ten digits. MUST be `>= 0` an
 #### Transfer#ilp
 <code>**ilp**:String</code>
 
-An [ILP packet](../0003-interledger-protocol/), denoting the payment's final destination.
+An [ILP packet](https://interledger.org/rfcs/0003-interledger-protocol/draft-4.html#specification), denoting the payment's final destination.
 
 If the `ilp` data is too large, the ledger plugin MUST reject with a `MaximumIlpDataSizeExceededError`.
 
-#### Transfer#noteToSelf
+#### Transfer#noteToSelf (OPTIONAL)
 <code>**noteToSelf**:Object</code>
 
-An arbitrary plain JavaScript object containing details the host needs to persist with the transfer in order to be able to react to transfer events like condition fulfillment later.
+An optional, arbitrary plain JavaScript object containing details the host needs to persist with the transfer in order to be able to react to transfer events like condition fulfillment later.
 
 Ledger plugins MAY attach the `noteToSelf` to the transfer and let the ledger store it. Otherwise it MAY use the [`store`](#store) in order to persist this field. Regardless of the implementation, the ledger plugin MUST ensure that all instances of the transfer carry the same `noteToSelf`, even across different machines.
 
@@ -548,10 +550,10 @@ An ISO 8601 timestamp representing the expiry date for the transfer.
 
 Ledger plugins that do not support holds or do not support expiries MUST reject with an `ExpiryNotSupportedError` if this parameter is provided.
 
-#### Transfer#custom
+#### Transfer#custom (OPTIONAL)
 <code>**custom**:Object</code>
 
-Ledger plugins MAY use this object to accept and/or set additional fields for other features they support. The object MUST be serializable, i.e. only plain JSON types are allowed anywhere in the object or sub-objects.
+Optional object that ledger plugins MAY use to accept and/or set additional fields for other features they support. The object MUST be serializable, i.e. only plain JSON types are allowed anywhere in the object or sub-objects.
 
 If the `custom` data is too large, the ledger plugin MUST reject with a `MaximumCustomDataSizeExceededError`.
 
@@ -584,8 +586,8 @@ The `Message` class is used to describe local ledger message. All fields are req
 | `String` | [from](#messagefrom) | ILP Address of the source account |
 | `String` | [to](#messageto) | ILP Address of the destination account |
 | `String` | [ledger](#messageledger) | ILP Address prefix of the ledger |
-| `String` | [ilp](#messageilp) | Base64-encoded ILP packet |
-| `Object` | [custom](#messagecustom) | Object containing ledger plugin specific options |
+| `String` | [ilp](#messageilp) | (Optional if `custom` is present) base64-encoded ILP packet |
+| `Object` | [custom](#messagecustom-optional) | (Optional) object containing ledger plugin specific options |
 
 #### Message#id
 <code>**id**:String</code>
@@ -610,14 +612,15 @@ The ILP Prefix of the ledger being used to transfer the message.
 #### Message#ilp
 <code>**ilp**:String</code>
 
-An [ILP packet](../0003-interledger-protocol/), used for communication among ledger participants.
+An [ILP packet](https://interledger.org/rfcs/0003-interledger-protocol/draft-4.html#specification), used for communication among ledger participants.
+Include either this field, or the `custom` field, or both.
 
 If the `ilp` data is too large, the ledger plugin MUST reject with a `MaximumIlpDataSizeExceededError`.
 
-#### Message#custom
+#### Message#custom (OPTIONAL)
 <code>**custom**:Object</code>
 
-An arbitrary plain JavaScript object containing additional custom data to be sent. The object MUST be serializable to JSON. Ledger plugins SHOULD treat this data as opaque.
+An optional, arbitrary plain JavaScript object containing additional custom data to be sent. The object MUST be serializable to JSON. Ledger plugins SHOULD treat this data as opaque.
 
 If the `custom` data is too large, the ledger plugin MUST reject with a `MaximumCustomDataSizeExceededError`.
 
